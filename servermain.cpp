@@ -7,7 +7,7 @@
 #include <unistd.h>
 #include <arpa/inet.h>
 #include <string.h>
-
+#include <math.h>
 
 // Included to get the support library
 #include <calcLib.h>
@@ -15,6 +15,24 @@
 #include <iostream>
 
 using namespace std;
+
+template<typename T>
+T calc(char* cmd, T v1, T v2){
+  if(memcmp(cmd, "add", 3) == 0) {
+    return v1 + v2;
+  }
+  else if(memcmp(cmd, "sub", 3) == 0) {
+    return v1 - v2;
+  }
+  else if(memcmp(cmd, "mul", 3) == 0) {
+    return v1 * v2;
+  }
+  else if(memcmp(cmd, "div", 3) == 0) {
+    return v1 / v2;
+  }
+  return (T)0;
+}
+
 
 int bind_socket(int socket, short port, sockaddr_in& addr) {
   socklen_t serverAddrlen = sizeof(addr);
@@ -123,12 +141,43 @@ int main(int argc, char *argv[]){
     }
 
     //Receive answer
-
+    memset(recvBuffer, '\0', sizeof(recvBuffer));
+    nbytes = read(clientsock, recvBuffer, sizeof(recvBuffer));
+    if(nbytes == 0) {
+      fprintf(stderr, "Failed to read client answer\n");
+      continue;
+    }
 
     //Check if correct
+    bool isCorrect = false;
+    if(isFloat) {
+      double ans = strtod(recvBuffer, NULL);
+      printf("%8.8g\n", ans);
+      double myans = calc<double>(op + 1, f1, f2);
+      printf("%8.8g\n", myans);
+      /*
+      if(ans == myans) {
+        isCorrect = true;
+      }
+      */
+     if(fabs(ans - myans) < 0.0000001) {
+       isCorrect = true;
+     }
+    }
+    else {
+      int ans = atoi(recvBuffer);
+      printf("%d\n", ans);
+      int myans = calc<int>(op, i1, i2);
+      printf("%d\n", myans);
+      if(ans == myans) {
+        isCorrect = true;
+      }
+    }
+
+    printf("%d\n", isCorrect);
 
     //Send OK if correct, ERROR otherwise
-
+    
   }
 
   shutdown(sockfd, SHUT_RDWR);

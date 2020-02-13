@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
   int s = read(sockfd, recvBuffer, sizeof(recvBuffer));
   printf("recv %s : %d\n", recvBuffer, s);
 
-  //Calculate
+  //Calculate and send answer
   char cmd[4];
   memset(cmd, '\0', 4);
   if(recvBuffer[0] == 'f') {
@@ -96,20 +96,26 @@ int main(int argc, char *argv[]) {
     char* tmp = recvBuffer;
     double v1 = strtod(recvBuffer + 5, &tmp);
     double v2 = strtod(tmp + 1, NULL);
-    printf("%8.8g", calc<double>(cmd, v1, v2));
+    double ans = calc<double>(cmd, v1, v2);
+    printf("%8.8g\n", ans); 
+    char sans[32];
+    sprintf(sans, "%8.8g", ans);
+    write(sockfd, sans, sizeof(sans));
   }
   else {
     memcpy(cmd, recvBuffer, 3);
     char* tmp = recvBuffer;
     int v1 = strtol(recvBuffer + 4, &tmp, 10);
     int v2 = strtol(tmp + 1, NULL, 10);
-    printf("%d", calc<int>(cmd, v1, v2));  
+    int ans = calc<int>(cmd, v1, v2);
+    printf("%d\n", ans);  
+    char sans[32];
+    sprintf(sans, "%d", ans);
+    write(sockfd, sans, sizeof(sans));
   }
 
-  //Send answer
-
   //Receive confirmation
-
+  
 
   shutdown(sockfd, SHUT_RDWR);
   return 0;
