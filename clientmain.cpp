@@ -12,7 +12,25 @@
 // Included to get the support library
 #include <calcLib.h>
 
-int main(int argc, char *argv[]){
+
+template<typename T>
+T calc(char* cmd, T v1, T v2){
+  if(memcmp(cmd, "add", 3) == 0) {
+    return v1 + v2;
+  }
+  else if(memcmp(cmd, "sub", 3) == 0) {
+    return v1 - v2;
+  }
+  else if(memcmp(cmd, "mul", 3) == 0) {
+    return v1 * v2;
+  }
+  else if(memcmp(cmd, "div", 3) == 0) {
+    return v1 / v2;
+  }
+  return (T)0;
+}
+
+int main(int argc, char *argv[]) {
   
   /* Do magic */
   if(argc < 3){
@@ -49,6 +67,49 @@ int main(int argc, char *argv[]){
     fprintf(stderr, "Failed to connect to %s:%d\n", buffer, ntohs(serverAddr.sin_port));
     return 3;
   }
+
+  //Receive protocol
+  char recvBuffer[256];
+  read(sockfd, recvBuffer, sizeof(recvBuffer));
+  if(strcmp(recvBuffer, "TEXT TCP 1.0") != 0){
+    fprintf(stderr, "Protocol not supported");
+    shutdown(sockfd, SHUT_RDWR);
+    return 0;
+  }
+  else {
+    printf("Received protocol %s\n", recvBuffer);
+  }
+  
+  //Send confirmation ("OK")
+  write(sockfd, "OK", 3);
+
+  //Recieve command
+  memset(recvBuffer, '\0', sizeof(recvBuffer));
+  int s = read(sockfd, recvBuffer, sizeof(recvBuffer));
+  printf("recv %s : %d\n", recvBuffer, s);
+
+  //Calculate
+  char cmd[4];
+  memset(cmd, '\0', 4);
+  if(recvBuffer[0] == 'f') {
+    memcpy(cmd, recvBuffer + 1, 3);
+    char* tmp = recvBuffer;
+    double v1 = strtod(recvBuffer + 5, &tmp);
+    double v2 = strtod(tmp + 1, NULL);
+    printf("%8.8g", calc<double>(cmd, v1, v2));
+  }
+  else {
+    memcpy(cmd, recvBuffer, 3);
+    char* tmp = recvBuffer;
+    int v1 = strtol(recvBuffer + 4, &tmp, 10);
+    int v2 = strtol(tmp + 1, NULL, 10);
+    printf("%d", calc<int>(cmd, v1, v2));  
+  }
+
+  //Send answer
+
+  //Receive confirmation
+
 
   shutdown(sockfd, SHUT_RDWR);
   return 0;
